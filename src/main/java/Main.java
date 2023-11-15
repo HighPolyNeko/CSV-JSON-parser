@@ -5,7 +5,13 @@ import com.opencsv.CSVReader;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -17,13 +23,51 @@ public class Main {
     public static void main(String[] args) {
         String[] columnMapping = {"id", "firstName", "lastName", "country", "age"};
         String fileName = "data.csv";
+
         List<Employee> list = parseCSV(columnMapping, fileName);
         String json = listToJson(list);
-        writeString(json);
+        writeString(json, "data_csv.json");
+
+        list = parseXML("data.xml");
+        json = listToJson(list);
+        writeString(json, "data_xml.json");
     }
 
-    private static void writeString(String str) {
-        try (FileWriter fr = new FileWriter("data.json")) {
+    private static List<Employee> parseXML(String file) {
+        List<Employee> employees = new ArrayList<>();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+
+            Document doc = builder.parse(new File(file));
+
+            Node root = doc.getDocumentElement();
+            NodeList nodeList = root.getChildNodes();
+
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node node_ = nodeList.item(i);
+                if (Node.ELEMENT_NODE == node_.getNodeType()) {
+                    Element element = (Element) node_;
+
+                    long id = Long.parseLong(element.getElementsByTagName("id").item(0).getTextContent());
+                    String firstName = element.getElementsByTagName("firstName").item(0).getTextContent();
+                    String lastName = element.getElementsByTagName("lastName").item(0).getTextContent();
+                    String country = element.getElementsByTagName("country").item(0).getTextContent();
+                    int age = Integer.parseInt(element.getElementsByTagName("age").item(0).getTextContent());
+
+                    employees.add(new Employee(id, firstName, lastName, country, age));
+                }
+            }
+
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        return employees;
+    }
+
+
+    private static void writeString(String str, String fileName) {
+        try (FileWriter fr = new FileWriter(fileName)) {
             fr.write(str);
         } catch (IOException e) {
             e.printStackTrace();
@@ -44,7 +88,7 @@ public class Main {
         try (CSVReader reader = new CSVReader(new FileReader(fileName))) {
             ColumnPositionMappingStrategy<Employee> strategy = new ColumnPositionMappingStrategy<>();
             strategy.setType(Employee.class);
-            strategy.setColumnMapping("id", "firstName", "lastName", "country", "age");
+            strategy.setColumnMapping(columnMapping);
 
             CsvToBean<Employee> csv = new CsvToBeanBuilder<Employee>(reader)
                     .withMappingStrategy(strategy)
