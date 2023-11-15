@@ -5,16 +5,16 @@ import com.opencsv.CSVReader;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,53 @@ public class Main {
         list = parseXML("data.xml");
         json = listToJson(list);
         writeString(json, "data_xml.json");
+
+        String newJson = readString("data_csv.json");
+        List<Employee> newList = jsonToList(newJson);
+        for (Employee e: newList){
+            System.out.println(e);
+        }
     }
+
+    private static List<Employee> jsonToList(String json) {
+        List<Employee> employees = new ArrayList<>();
+
+        JSONParser parser = new JSONParser();
+        JSONArray jsonArray = null;
+        try {
+            jsonArray = (JSONArray) parser.parse(json);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+
+        GsonBuilder builder = new GsonBuilder();
+        Gson gson = builder.create();
+
+        for (Object obj : jsonArray) {
+            Employee employee = gson.fromJson(obj.toString(), Employee.class);
+            employees.add(employee);
+        }
+
+        return employees;
+    }
+
+
+    private static String readString(String filePath){
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))){
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            return stringBuilder.toString();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+
+    }
+
 
     private static List<Employee> parseXML(String file) {
         List<Employee> employees = new ArrayList<>();
