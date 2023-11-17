@@ -39,7 +39,7 @@ public class Main {
         }
     }
 
-    private static List<Employee> jsonToList(String json) {
+    protected static List<Employee> jsonToList(String json) {
         List<Employee> employees = new ArrayList<>();
 
         JSONParser parser = new JSONParser();
@@ -62,7 +62,7 @@ public class Main {
     }
 
 
-    private static String readString(String filePath){
+    protected static String readString(String filePath){
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))){
             StringBuilder stringBuilder = new StringBuilder();
             String line;
@@ -112,7 +112,7 @@ public class Main {
     }
 
 
-    private static void writeString(String str, String fileName) {
+    static void writeString(String str, String fileName) {
         try (FileWriter fr = new FileWriter(fileName)) {
             fr.write(str);
         } catch (IOException e) {
